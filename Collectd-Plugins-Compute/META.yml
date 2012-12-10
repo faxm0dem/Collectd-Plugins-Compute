@@ -1,5 +1,5 @@
 ---
-abstract: 'Write plugin to make simple calculations on values'
+abstract: ~
 author:
   - 'Fabien Wernli, C<< <cpan at faxm0dem.org> >>'
   - 'Fabien Wernli <cpan@faxm0dem.org>'
@@ -23,6 +23,7 @@ no_index:
     - t
 requires:
   Collectd: 0
+  Collectd::Plugins::Common: 0
   Math::RPN: 0
   Try::Tiny: 0
   perl: 5.6.0

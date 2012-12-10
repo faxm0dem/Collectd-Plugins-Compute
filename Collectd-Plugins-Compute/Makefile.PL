@@ -7,6 +7,7 @@ license  'perl';
 
 requires 'Math::RPN';
 requires 'Collectd';
+requires 'Collectd::Plugins::Common';
 requires 'Try::Tiny';
 requires 'threads';
 
