@@ -12,12 +12,15 @@ inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/Collectd/Plugins/Compute.pm
+lib/Collectd/Plugins/ComputeWrite.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
+perl-Collectd-Plugins-Compute.spec
 README
 share/etc/collectd.d/compute.conf
 t/00-load.t
+t/01-read.t
 t/boilerplate.t
 t/collectd.conf
 t/manifest.t

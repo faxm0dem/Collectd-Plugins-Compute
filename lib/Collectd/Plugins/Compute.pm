@@ -8,11 +8,11 @@ use Try::Tiny;
 
 use Collectd qw( :all );
 use Collectd::Unixsock;
-use Collectd::Plugins::GridEngine;
+use Collectd::Plugins::Common qw/recurse_config/;
 
 =head1 NAME
 
-Collectd::Plugins::GridEngine::GlobalJobEfficiency
+Collectd::Plugins::Compute;
 
 =head1 VERSION
 
@@ -22,70 +22,57 @@ Version 0.1001
 
 our $VERSION = '0.1001';
 
-
 =head1 SYNOPSIS
 
 See L<Collectd>, L<collectd-perl>
 
-=head1 PLUGIN CALLBACKS
+=head1 DESCRIPTION
 
-Registered callbacks are of type READ and CONFIG.
+This plugin will use L<Collectd::Unixsock> to retrieve values from the cache, and compute
+a new value using a RPN expression.
+
+=head1 CONFIGURATION
+
+The configuration is best explained in an example:
+
+ LoadPlugin perl
+ <Plugin perl>
+	BaseName "Collectd::Plugins"
+	LoadPlugin Compute
+	<Plugin Compute>
+		UnixSock "/var/run/collectd-unixsock"
+		<Target>
+			<tgt_memused>
+				host          "target1host.example.com"
+				plugin        "memory"
+				type          "memory"
+				type_instance "used"
+			</tgt_memused>
+			<tgt_memfree>
+				host          "target1host.example.com"
+				plugin        "memory"
+				type          "memory"
+				type_instance "free"
+			</tgt_memfree>
+		</Target>
+		<Compute>
+			RPN     "tgt_memused" "tgt_memfree" "/" 100 "*"
+			SetHost           "somehost.example.com"
+			SetPlugin         "memory_ratio"
+			SetType           "percent"
+			SetTypeInstance   "used_vs_free"
+		</Compute>
+	</Plugin>
+ </Plugin>
+
+This example will yield a new value whose identifier will be C<somehost.example.com/memory_ratio/percent-used_vs_free>. C<Target> blocks must contain fully qualified plugin names, e.g. must match exactly one plugin in the cache, and will be used inside C<Compute> blocks by their name, to compute the reverse polish notation C<RPN> blocks.
+There can be as many C<Compute> blocks as needed.
 
 =cut
 
-my $plugin_name = "jobefficiency";
+my $plugin_name = "Compute";
 my %opt = (
 	UnixSock => "/var/run/collectd/sock",
-	UnixSock => "/var/tmp/collectd-unixsock",
-	Compute => [
-#		{
-#			SetHost => "gridengine.in2p3.fr",
-#			SetPlugin => "jobefficiency",
-#			SetPluginInstance => "global",
-#			SetType => "percent",
-#			SetTypeInstance => "idle",
-#			RPN => [ qw:cpu_idle running_jobs / 100 *: ],
-#		},
-		{
-			SetHost => "gridengine.in2p3.fr",
-			SetPlugin => "cpu",
-			SetPluginInstance => "compute",
-			SetType => "gauge",
-			SetTypeInstance => "idle",
-			RPN => [ qw:cpu_u cpu_i /: ],
-		},
-	],
-	MaxTimeDiff => 60,
-	Target => {
-		cpu_i => {
-			host => "ccswissrp.in2p3.fr",
-			plugin => "cpu",
-			plugin_instance => 0,
-			type => "cpu",
-			type_instance => "idle",
-		},
-		cpu_u => {
-			host => "ccswissrp.in2p3.fr",
-			plugin => "cpu",
-			plugin_instance => 1,
-			type => "cpu",
-			type_instance => "user",
-		},
-		cpu_idle => {
-			host => "gridengine.in2p3.fr",
-			plugin =>  "cpu",
-			plugin_instance => "all-sum",
-			type => "cpu",
-			type_instance => "idle",
-		},
-		running_jobs => {
-			host => "gridengine.in2p3.fr",
-			plugin => "curl_xml",
-			plugin_instance => "GridEngine",
-			type => "jobs",
-			type_instance => "Running",
-		},
-	},
 );
 
 my %target_value;
@@ -113,12 +100,37 @@ sub my_config {
 	my (undef,$opt) = recurse_config($_[0]);
 	my $compute = $opt->{Compute};
 	unless ($compute) {
-		my_log(LOG_ERR, "Compute block missing");
+		my_log(LOG_ERR, "No Compute block defined");
 		return
 	}
 	if (ref $compute eq "HASH") {
 		$opt->{Compute} = [ $compute ];
 	}
+	my @valid_compute;
+	for my $c (@{$opt->{Compute}}) {
+		unless (exists $c -> {SetPlugin}) {
+			my_log(LOG_WARNING, "Ignoring Compute block with missing `SetPlugin' directive");
+			next;
+		}
+		unless (exists $c -> {SetType}) {
+			my_log(LOG_WARNING, "Ignoring Compute block with missing `SetType' directive");
+			next;
+		}
+		unless (exists $c -> {RPN}) {
+			my_log(LOG_WARNING, "Ignoring Compute block with missing RPN block");
+			next;
+		}
+		if (ref ($c->{RPN}) =~ /^(?:ARRAY)?$/) {
+			push @valid_compute, $c;
+		} else {
+			my_log(LOG_WARNING, "Ignoring Compute block with invalid RPN block (must be string or array)");
+		}
+	}
+	unless (scalar @valid_compute) {
+		my_log(LOG_ERR, "No valid Compute block");
+		return
+	}
+	$opt->{Compute} = \@valid_compute;
 	%opt = %$opt;
 	1;
 }
@@ -170,19 +182,19 @@ sub my_read {
 		try {
 			$value = rpn(@rpn);
 		} catch {
-			my_log(LOG_ERR,"Caught exception when computing RPN `", @rpn,"': ", @_);
+			my_log(LOG_ERR,"Caught exception when computing RPN", @{$c->{RPN}}, "=", @rpn, @_);
 		};
 		if (defined $value) {
-			my_log(LOG_DEBUG, "dispatching $value");
-			plugin_dispatch_values({
-				host => $c->{SetHost},
+			my_log(LOG_DEBUG, "dispatching RPN", @{$c->{RPN}}, "=", @rpn, "=", $value);
+			my %vl = (
 				plugin => $c->{SetPlugin},
-				plugin_instance => $c->{SetPluginInstance},
-				type => $c->{SetType},
-				type_instance => $c->{SetTypeInstance},
+				type  => $c->{SetType},
 				values => [ $value ],
-			});
-			1;
+			);
+			$vl{host} = $c->{SetHost} if exists $c->{SetHost};
+			$vl{plugin_instance} = $c->{SetPluginInstance} if exists $c->{SetPluginInstance};
+			$vl{type_instance} = $c->{SetTypeInstance} if exists $c->{SetTypeInstance};
+			plugin_dispatch_values(\%vl)
 		}
 	}
 	1;

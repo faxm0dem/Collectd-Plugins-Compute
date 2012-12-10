@@ -7,10 +7,13 @@ license  'perl';
 
 requires 'Math::RPN';
 requires 'Collectd';
+requires 'Collectd::Plugins::Common';
+requires 'Collectd::Unixsock';
 requires 'Try::Tiny';
 requires 'threads';
 
 build_requires 'Test::More';
+build_requires 'Test::Collectd::Plugins';
 
 auto_install;
 
