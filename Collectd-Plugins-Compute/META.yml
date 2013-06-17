@@ -25,7 +25,10 @@ no_index:
 requires:
   Collectd: 0
   Collectd::Plugins::Common: 0
+<<<<<<< HEAD
   Collectd::Unixsock: 0
+=======
+>>>>>>> a3ed82a5ac4a929fc9f00fda7a5a0476380cb1fa
   Math::RPN: 0
   Try::Tiny: 0
   perl: 5.6.0

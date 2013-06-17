@@ -18,7 +18,10 @@ META.yml
 perl-Collectd-Plugins-Common.spec
 README
 t/00-load.t
+<<<<<<< HEAD
 t/01-deep.t
+=======
+>>>>>>> a3ed82a5ac4a929fc9f00fda7a5a0476380cb1fa
 t/boilerplate.t
 t/manifest.t
 t/pod-coverage.t
