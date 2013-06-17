@@ -8,10 +8,7 @@ license  'perl';
 requires 'Math::RPN';
 requires 'Collectd';
 requires 'Collectd::Plugins::Common';
-<<<<<<< HEAD
 requires 'Collectd::Unixsock';
-=======
->>>>>>> a3ed82a5ac4a929fc9f00fda7a5a0476380cb1fa
 requires 'Try::Tiny';
 requires 'threads';
 
