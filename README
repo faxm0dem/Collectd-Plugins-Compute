@@ -1,16 +1,17 @@
 Collectd-Plugins-Compute
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+This is an attempt to implement the "compute" plugin in perl.
+It permits to do calculations on other plugins currently in collectd's cache.
+Unfortunately, it is not possible to access the latter using the perl plugin, so there are two
+possibilities:
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+ - register a write callback
+ - use unixsock
 
+The first solution has the drawback of being extremely uneffective, especially on systems
+with many values, as your plugin has to do the mix and matching throughout the whole
+ecosystem of values. The second has the drawback to rely on the unixsock plugin, which in turn needs to be loaded before the compute plugin, which can currently only be achieved reliably
+using two separate collectd instances. The second approach has been chosen here.
 
 INSTALLATION
 
@@ -28,19 +29,9 @@ perldoc command.
 
     perldoc Collectd::Plugins::Compute
 
-You can also look for information at:
+You can also look for information and submit pull requests on github:
 
-    RT, CPAN's request tracker (report bugs here)
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Collectd-Plugins-Compute
-
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Collectd-Plugins-Compute
-
-    CPAN Ratings
-        http://cpanratings.perl.org/d/Collectd-Plugins-Compute
-
-    Search CPAN
-        http://search.cpan.org/dist/Collectd-Plugins-Compute/
+https://github.com/faxm0dem/Collectd-Plugins-Compute
 
 
 LICENSE AND COPYRIGHT
