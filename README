@@ -26,35 +26,35 @@ USAGE
 
 The configuration is best explained in an example:
 
- LoadPlugin perl
- <Plugin perl>
-   BaseName "Collectd::Plugins"
-   LoadPlugin Compute
-   <Plugin Compute>
-     UnixSock "/var/run/collectd-unixsock"
-     <Target>
-       <tgt_memused>
-			   host "target1host.example.com"
-			   plugin "memory"
-			   type "memory"
-			   type_instance "used"
-			 </tgt_memused>
-			 <tgt_memfree>
-			   host "target1host.example.com"
-			   plugin "memory"
-			   type "memory"
-			   type_instance "free"
-			 </tgt_memfree>
-		 </Target>
-		 <Compute>
-			 RPN "tgt_memused" "tgt_memfree" "/" 100 "*"
-			 SetHost "somehost.example.com"
-			 SetPlugin "memory_ratio"
-			 SetType "percent"
-			 SetTypeInstance "used_vs_free"
-		 </Compute>
+	LoadPlugin perl
+	<Plugin perl>
+	  BaseName "Collectd::Plugins"
+	  LoadPlugin Compute
+	  <Plugin Compute>
+	    UnixSock "/var/run/collectd-unixsock"
+	    <Target>
+	      <tgt_memused>
+	        host "target1host.example.com"
+	        plugin "memory"
+	        type "memory"
+	        type_instance "used"
+	      </tgt_memused>
+	      <tgt_memfree>
+	        host "target1host.example.com"
+	        plugin "memory"
+	        type "memory"
+	        type_instance "free"
+	      </tgt_memfree>
+	    </Target>
+	    <Compute>
+	      RPN "tgt_memused" "tgt_memfree" "/" 100 "*"
+	      SetHost "somehost.example.com"
+	      SetPlugin "memory_ratio"
+	      SetType "percent"
+	      SetTypeInstance "used_vs_free"
+	    </Compute>
 	  </Plugin>
- </Plugin>
+	</Plugin>
 
 This example will yield a new value whose identifier will be "somehost.example.com/memory_ratio/percent-used_vs_free". "Target" blocks must contain fully qualified plugin names, e.g. must match exactly one plugin in the cache, and will be used inside "Compute" blocks by their name, to compute the reverse polish notation "RPN" blocks.
 There can be as many "Compute" blocks as needed.
